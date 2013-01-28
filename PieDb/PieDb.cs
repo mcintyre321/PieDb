@@ -1,21 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using Lucene.Net.Analysis;
-using Lucene.Net.Analysis.Standard;
-using Lucene.Net.Index;
-using Lucene.Net.Linq;
-using Lucene.Net.Store;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Directory = System.IO.Directory;
-using Version = Lucene.Net.Util.Version;
 
 namespace PieDb
 {
