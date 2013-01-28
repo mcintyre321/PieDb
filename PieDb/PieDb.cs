@@ -2,18 +2,26 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Lucene.Net.Analysis;
+using Lucene.Net.Analysis.Standard;
+using Lucene.Net.Index;
+using Lucene.Net.Linq;
+using Lucene.Net.Store;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Directory = System.IO.Directory;
+using Version = Lucene.Net.Util.Version;
 
 namespace PieDb
 {
     public class PieDb
     {
-        public string Location { get; set; }
+        public string Location { get; private set; }
         public SerializerSettings SerializerSettings { get; set; }
         public AdvancedOptions Advanced { get; private set; }
 
@@ -25,9 +33,9 @@ namespace PieDb
             Advanced = new AdvancedOptions(this);
         }
 
-        public void Store<T>(T obj)
+        public void Store<T>(T obj, string id = null) where T : new()
         {
-            var doc = obj.PieDocument();
+            var doc = obj.PieDocument(id);
             var json = JsonConvert.SerializeObject(doc, Formatting.Indented, SerializerSettings);
             File.WriteAllText(Path.Combine(Location, doc.Id + ".json"), json);
         }
@@ -54,6 +62,11 @@ namespace PieDb
                 Directory.CreateDirectory(_pieDb.Location);
             }
         }
+
+        public IQueryable<T> Query<T>(Expression<Func<T, bool>> where)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 
@@ -68,12 +81,12 @@ namespace PieDb
     {
         static ConditionalWeakTable<object, PieDocument> KeyTable = new ConditionalWeakTable<object, PieDocument>(); 
 
-        public static PieDocument PieDocument(this object obj)
+        public static PieDocument PieDocument(this object obj, string id = null)
         {
             return KeyTable.GetValue(obj, o => new PieDocument()
             {
                 Data = o,
-                Id = Guid.NewGuid().ToString()
+                Id = id ?? Guid.NewGuid().ToString()
             });
         }
 

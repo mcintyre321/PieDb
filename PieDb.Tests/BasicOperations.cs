@@ -52,28 +52,21 @@ namespace PieDb.Tests
             Assert.AreEqual("Harry", task2.Assignee.Name);
             Assert.True(task2.Assignee == task2.Creator);
         }
-    }
 
-    public class TaskList
-    {
-        public TaskList()
+        [Test]
+        public void CanAssignAnId()
         {
-            Tasks = new List<Task>();
+            var user = new User() { Name = "Harry" };
+            var task = new Task()
+            {
+                Creator = user,
+                Assignee = user
+            };
+            db.Store(task, "asdfg");
+
+            var task2 = db.Get<Task>("asdfg");
+            Assert.AreEqual("Harry", task2.Assignee.Name);
+            Assert.True(task2.Assignee == task2.Creator);
         }
-
-        public string Title { get; set; }
-        public IList<Task> Tasks { get; set; } 
-    }
-
-    public class Task
-    {
-        public string Description;
-        public User Creator { get; set; }
-        public User Assignee { get; set; }
-    }
-
-    public class User
-    {
-        public string Name { get; set; }
     }
 }
