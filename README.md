@@ -5,7 +5,7 @@ The minimalist embedded .net NOSQL database that is as easy-as-pie.
 
 For when you just want to get started QUICKLY with NO FUSS.
 
-Nuget: Install-Package PieDb
+> Install-Package PieDb
 
       var db = new PieDb();
       var someObject = ...; //your object
