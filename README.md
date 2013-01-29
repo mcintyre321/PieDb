@@ -3,7 +3,7 @@ PieDb
 
 The minimal embedded .net database that is as easy-as-pie. 
 
-Useful when you just want to get started QUICKLY with NO FUSS.
+For when you just want to get started QUICKLY with NO FUSS.
 
 Nuget: Install-Package PieDb
 
