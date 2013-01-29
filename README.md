@@ -29,11 +29,9 @@ Nuget: Install-Package PieDb
       var results = db.Query<T>(t => t.X == "asd").ToArray();
       
 
-Documents are stored in in App_Data/PieDb/pieId.json
-      
-Documents are serialized using JSON.NET (http://james.newtonking.com/projects/json-net.aspx)
-
-Documents are indexed using Lucene.Net.Linq (https://github.com/themotleyfool/Lucene.Net.Linq)
-
-MIT Licenced
+* Documents are stored in in App_Data/PieDb/pieId.json
+* Documents are serialized using JSON.NET (http://james.newtonking.com/projects/json-net.aspx)
+* Documents are indexed using Lucene.Net.Linq (https://github.com/themotleyfool/Lucene.Net.Linq)
+* Optimistic Concurrency is supported 
+* MIT Licenced
 
