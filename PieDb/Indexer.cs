@@ -17,6 +17,8 @@ namespace PieDb
             _pieDb.DocumentRemoved += RemoveDocumentFromIndex;
             _pieDb.DocumentUpdated += UpdateDocumentInIndex;
             _pieDb.Clearing += DeleteIndexFilesAndClearIndex;
+            _pieDb.Cleared += Reinitialise;
+
             Location = Path.Combine(_pieDb.Location, "Indexes");
             var directoryInfo = new DirectoryInfo(Location);
             directoryInfo.Create();
@@ -37,10 +39,15 @@ namespace PieDb
 
         }
 
-
         void DeleteIndexFilesAndClearIndex(object sender, EventArgs e)
         {
         }
+
+        void Reinitialise(object sender, EventArgs e)
+        {
+
+        }
+
 
         public IQueryable<T> Query<T>(Expression<Func<T, bool>> @where)
         {
