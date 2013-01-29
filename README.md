@@ -35,3 +35,5 @@ Nuget: Install-Package PieDb
 * Optimistic Concurrency is supported 
 * MIT Licenced
 
+Why PieDb? Many of my other projects are named after foods and it's short.
+
