@@ -29,7 +29,7 @@ Nuget: Install-Package PieDb
       var results = db.Query<T>(t => t.X == "asd").ToArray();
       
 
-Documents are stored in in App_Data/PieDb/<document id>.json
+Documents are stored in in App_Data/PieDb/pieId.json
       
 Documents are serialized using JSON.NET (http://james.newtonking.com/projects/json-net.aspx)
 
