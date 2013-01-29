@@ -15,7 +15,7 @@ namespace PieDb
         public event DbEvent DocumentUpdated = (o) => { };
         public event DbEvent DocumentRemoved = (o) => { };
         public event EventHandler Clearing = (sender, args) => { };
-        public event EventHandler Cleared = (sender, args) => { }; 
+        public event EventHandler Cleared = (sender, args) => { };
 
         public string Location { get; private set; }
         public SerializerSettings SerializerSettings { get; set; }
@@ -33,40 +33,73 @@ namespace PieDb
 
         public void Store<T>(T obj, string id = null) where T : new()
         {
-            var wasNew = false;
-            var doc = obj.PieDocument(id, out wasNew);
+            var doc = obj.PieDocument(id);
+            doc.Deleted = false;
+            SaveDocument(doc);
+        }
+
+        private void SaveDocument(PieDocument doc)
+        {
+            bool wasNew = false;
+            try
+            {
+                var prev = Get(doc.Id);
+                var prevETag = prev.PieDocument(null).ETag;
+                if (prevETag != doc.ETag)
+                {
+                    throw new ConcurrencyException();
+                }
+                doc.ETag = Guid.NewGuid().ToString();
+            }
+            catch (DocumentNotFoundException ex)
+            {
+                wasNew = true;
+            }
             var json = JsonConvert.SerializeObject(doc, Formatting.Indented, SerializerSettings);
             File.WriteAllText(Path.Combine(Location, doc.Id + ".json"), json);
-            if (wasNew) DocumentAdded(doc); else DocumentUpdated(doc);
-
+            if (wasNew) DocumentAdded(doc);
+            else DocumentUpdated(doc);
         }
 
         public void Remove<T>(T obj)
         {
             Remove(obj.PieId());
-            DocumentRemoved(obj.PieDocument(null));
         }
         public void Remove(string id)
         {
-            File.Delete(Path.Combine(Location, id + ".json"));
+            var doc = GetPieDocument(id);
+            doc.Deleted = true;
+            SaveDocument(doc);
+            DocumentRemoved(doc);
+        
         }
 
-        public T Get<T>(string pieId)
+        public object Get(string pieId)
         {
             try
             {
-                var json = File.ReadAllText(Path.Combine(Location, pieId + ".json"));
-                var obj = JsonConvert.DeserializeObject<PieDocument>(json, SerializerSettings);
-                return (T) obj.Data;
-
+                var obj = GetPieDocument(pieId);
+                if (obj.Deleted) throw new DocumentNotFoundException(pieId, null);
+                return obj.Data;
             }
             catch (FileNotFoundException ex)
             {
-
                 throw new DocumentNotFoundException(pieId, ex)
                 {
                 };
             }
+        }
+        public T Get<T>(string pieId)
+        {
+            return (T) Get(pieId);
+        }
+
+        private PieDocument GetPieDocument(string pieId)
+        {
+            var json = File.ReadAllText(Path.Combine(Location, pieId + ".json"));
+            var doc = JsonConvert.DeserializeObject<PieDocument>(json, SerializerSettings);
+            doc.SetDataPieDocument();
+            return doc;
         }
 
         public class AdvancedOptions
@@ -99,9 +132,14 @@ namespace PieDb
 
     }
 
+
+    public class ConcurrencyException : Exception
+    {
+    }
+
     public class DocumentNotFoundException : Exception
     {
-        public DocumentNotFoundException(string pieId, Exception ex):
+        public DocumentNotFoundException(string pieId, Exception ex) :
             base("Document '" + pieId + "' not found", ex)
         {
         }

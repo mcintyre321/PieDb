@@ -7,7 +7,7 @@ namespace PieDb
     {
         static ConditionalWeakTable<object, PieDocument> KeyTable = new ConditionalWeakTable<object, PieDocument>();
 
-        public static PieDocument PieDocument(this object obj, string id)
+        public static PieDocument PieDocument(this object obj, string id = null)
         {
             var hadToCreate = false;
             return PieDocument(obj, id, out hadToCreate);
@@ -22,6 +22,7 @@ namespace PieDb
                 return new PieDocument()
                 {
                     Data = o,
+                    ETag = Guid.NewGuid().ToString(),
                     Id = id ?? Guid.NewGuid().ToString()
                 };
             });
@@ -32,7 +33,12 @@ namespace PieDb
 
         public static string PieId(this object obj)
         {
-            return obj.PieDocument(null).Id;
+            return obj.PieDocument(null as string).Id;
+        }
+
+        public static void SetDataPieDocument(this PieDocument doc)
+        {
+            KeyTable.GetValue(doc.Data, o => doc);
         }
     }
 }
