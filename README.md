@@ -1,7 +1,7 @@
 PieDb
 =====
 
-The minimal embedded .net database that is as easy-as-pie. 
+The minimalist embedded .net NOSQL database that is as easy-as-pie. 
 
 For when you just want to get started QUICKLY with NO FUSS.
 
