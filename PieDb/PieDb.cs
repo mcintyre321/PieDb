@@ -2,38 +2,69 @@
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Directory = System.IO.Directory;
 
 namespace PieDb
 {
-    public class PieDb
+    public class PieDb : IDisposable
     {
+        public delegate void DbEvent(PieDocument document);
+
+        public event DbEvent DocumentAdded = (o) => { };
+        public event DbEvent DocumentUpdated = (o) => { };
+        public event DbEvent DocumentRemoved = (o) => { }; 
+
         public string Location { get; private set; }
         public SerializerSettings SerializerSettings { get; set; }
         public AdvancedOptions Advanced { get; private set; }
-
+        public Indexer Indexer { get; set; }
         public PieDb()
         {
             Location = Path.Combine(Helpers.GetAppDataPath(), "PieDb");
             Directory.CreateDirectory(Location);
             SerializerSettings = new SerializerSettings();
             Advanced = new AdvancedOptions(this);
+
+            Indexer = new Indexer(this);
         }
 
         public void Store<T>(T obj, string id = null) where T : new()
         {
-            var doc = obj.PieDocument(id);
+            var wasNew = false;
+            var doc = obj.PieDocument(id, out wasNew);
             var json = JsonConvert.SerializeObject(doc, Formatting.Indented, SerializerSettings);
             File.WriteAllText(Path.Combine(Location, doc.Id + ".json"), json);
+            if (wasNew) DocumentAdded(doc); else DocumentUpdated(doc);
+
+        }
+
+        public void Remove<T>(T obj)
+        {
+            Remove(obj.PieId());
+            DocumentRemoved(obj.PieDocument(null));
+        }
+        public void Remove(string id)
+        {
+            File.Delete(Path.Combine(Location, id + ".json"));
         }
 
         public T Get<T>(string pieId)
         {
-            var json = File.ReadAllText(Path.Combine(Location, pieId + ".json"));
-            var obj = JsonConvert.DeserializeObject<PieDocument>(json, SerializerSettings);
-            return (T) obj.Data;
+            try
+            {
+                var json = File.ReadAllText(Path.Combine(Location, pieId + ".json"));
+                var obj = JsonConvert.DeserializeObject<PieDocument>(json, SerializerSettings);
+                return (T) obj.Data;
+
+            }
+            catch (FileNotFoundException ex)
+            {
+
+                throw new DocumentNotFoundException(pieId, ex)
+                {
+                };
+            }
         }
 
         public class AdvancedOptions
@@ -52,44 +83,23 @@ namespace PieDb
             }
         }
 
-        public IQueryable<T> Query<T>(Expression<Func<T, bool>> where)
+        public IQueryable<T> Query<T>(Expression<Func<T, bool>> where = null) where T : new()
         {
-            throw new NotImplementedException();
-        }
-    }
-
-
-    public class PieDocument
-    {
-        public object Data { get; set; }
-
-        public string Id { get; set; }
-    }
-
-    public static class PieIdExtension
-    {
-        static ConditionalWeakTable<object, PieDocument> KeyTable = new ConditionalWeakTable<object, PieDocument>(); 
-
-        public static PieDocument PieDocument(this object obj, string id = null)
-        {
-            return KeyTable.GetValue(obj, o => new PieDocument()
-            {
-                Data = o,
-                Id = id ?? Guid.NewGuid().ToString()
-            });
+            return Indexer.Query<T>(where);
         }
 
-        public static string PieId(this object obj)
+        public void Dispose()
         {
-            return obj.PieDocument().Id;
+            Indexer.Dispose();
         }
+
     }
 
-    internal static class Helpers
+    public class DocumentNotFoundException : Exception
     {
-        internal static string GetAppDataPath()
+        public DocumentNotFoundException(string pieId, Exception ex):
+            base("Document '" + pieId + "' not found", ex)
         {
-            return AppDomain.CurrentDomain.GetData("DataDirectory") as string ?? (AppDomain.CurrentDomain.SetupInformation.ApplicationBase + "/App_Data");
         }
     }
 }

@@ -14,12 +14,14 @@ namespace PieDb.Tests
             db.Advanced.Clear();
         }
 
+        [Test]
         public void CanSearch()
         {
             var user = new User() {Name = "Harry"};
             db.Store(user);
-            var users = db.Query<User>(u => u.Name == "Harry").Single();
-
+            var user2 = db.Query<User>(u => u.Name == "Harry").Single();
+            Assert.AreEqual("Harry", user2.Name);
+            Assert.AreEqual(user.PieId(), user2.PieId(), "If these are different, user2 has not been loaded from the database (it has just been rebuilt by the lucene search)");
         }
     }
 }

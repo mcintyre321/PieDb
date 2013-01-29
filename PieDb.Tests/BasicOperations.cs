@@ -37,10 +37,11 @@ namespace PieDb.Tests
             Assert.AreEqual("Groceries", taskList2.Title);
             Assert.AreEqual("milk", taskList2.Tasks.Single().Description);
         }
+
         [Test]
         public void PreservesReferences()
         {
-            var user = new User() {Name = "Harry"};
+            var user = new User() { Name = "Harry" };
             var task = new Task()
             {
                 Creator = user,
@@ -52,6 +53,21 @@ namespace PieDb.Tests
             Assert.AreEqual("Harry", task2.Assignee.Name);
             Assert.True(task2.Assignee == task2.Creator);
         }
+
+        [Test]
+        public void CanDelete()
+        {
+            var user = new User() { Name = "Harry" };
+            var task = new Task()
+            {
+                Creator = user,
+                Assignee = user
+            };
+            db.Store(task);
+            db.Remove(task);
+            Assert.Throws<DocumentNotFoundException>(() => db.Get<Task>(task.PieId()));
+        }
+
 
         [Test]
         public void CanAssignAnId()
