@@ -13,7 +13,8 @@ namespace PieDb
 
         public event DbEvent DocumentAdded = (o) => { };
         public event DbEvent DocumentUpdated = (o) => { };
-        public event DbEvent DocumentRemoved = (o) => { }; 
+        public event DbEvent DocumentRemoved = (o) => { };
+        public event EventHandler Clearing = (sender, args) => { }; 
 
         public string Location { get; private set; }
         public SerializerSettings SerializerSettings { get; set; }
@@ -78,6 +79,7 @@ namespace PieDb
 
             public void Clear()
             {
+                _pieDb.Clearing(this, EventArgs.Empty);
                 Directory.Delete(_pieDb.Location, true);
                 Directory.CreateDirectory(_pieDb.Location);
             }
