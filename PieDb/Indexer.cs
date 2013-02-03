@@ -51,6 +51,7 @@ namespace PieDb
 
         public IQueryable<T> Query<T>(Expression<Func<T, bool>> @where)
         {
+            throw new NotImplementedException();
             var session = null as Lucene.Net.Linq.ISession<T>;
             var indexQ = session.Query();
             if (@where != null) indexQ = indexQ.Where(where);
