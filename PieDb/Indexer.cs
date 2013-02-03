@@ -52,10 +52,10 @@ namespace PieDb
         public IQueryable<T> Query<T>(Expression<Func<T, bool>> @where)
         {
             throw new NotImplementedException();
-            var session = null as Lucene.Net.Linq.ISession<T>;
-            var indexQ = session.Query();
-            if (@where != null) indexQ = indexQ.Where(where);
-            return indexQ.Select(item => item /* .GetStoredPieId().Select(id => _pieDb.Get<T>(id); */);
+            ////var session = null as Lucene.Net.Linq.ISession<T>;
+            ////var indexQ = session.Query();
+            ////if (@where != null) indexQ = indexQ.Where(where);
+            ////return indexQ.Select(item => item /* .GetStoredPieId().Select(id => _pieDb.Get<T>(id); */);
             //actually want to get the items from the datastore, not the index
         }
 
