@@ -71,7 +71,7 @@ namespace PieDb
             doc.Deleted = true;
             SaveDocument(doc);
             DocumentRemoved(doc);
-        
+
         }
 
         public object Get(string pieId)
@@ -89,9 +89,22 @@ namespace PieDb
                 };
             }
         }
+
         public T Get<T>(string pieId)
         {
-            return (T) Get(pieId);
+            return (T)Get(pieId);
+        }
+
+        public T TryGet<T>(string pieId) where T : class
+        {
+            try
+            {
+                return Get<T>(pieId);
+            }
+            catch (DocumentNotFoundException)
+            {
+                return null;
+            }
         }
 
         private PieDocument GetPieDocument(string pieId)

@@ -16,7 +16,7 @@ namespace PieDb.Tests
         }
 
         [Test]
-        public void ExceptionIsThrownIfOtherChangesMade()
+        public void ConcurrencyExceptionIsThrownIfAnotherInstanceHasBeenSavedInTheMeantime()
         {
             var task = new Task()
             {
@@ -25,13 +25,12 @@ namespace PieDb.Tests
 
             db.Store(task);
 
-            var task2 = db.Get<Task>(task.PieId());
-            task2.Description = "Milk";
-            db.Store(task2, task.PieId());
+            //now another session loads the task... 
+            var otherTask = db.Get<Task>(task.PieId());
+            otherTask.Description = "Milk";
+            db.Store(otherTask, task.PieId()); //...and saves it
 
             Assert.Throws<ConcurrencyException>(() => db.Store(task));
-
-
         }
     }
 }
