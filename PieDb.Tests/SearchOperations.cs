@@ -16,6 +16,12 @@ namespace PieDb.Tests
             db.Advanced.Clear();
         }
 
+        [TearDown]
+        public void TearDown()
+        {
+            db.Dispose();
+        }
+
         [Test]
         public void CanSearch()
         {
