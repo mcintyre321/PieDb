@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using Newtonsoft.Json;
+using PieDb.Search;
 using Directory = System.IO.Directory;
 
 namespace PieDb
@@ -84,9 +86,7 @@ namespace PieDb
             }
             catch (FileNotFoundException ex)
             {
-                throw new DocumentNotFoundException(pieId, ex)
-                {
-                };
+                throw new DocumentNotFoundException(pieId, ex) { };
             }
         }
 
@@ -133,7 +133,7 @@ namespace PieDb
             }
         }
 
-        public IQueryable<T> Query<T>(Expression<Func<T, bool>> where = null) where T : new()
+        public IEnumerable<T> Query<T>(Expression<Func<T, bool>> where = null) where T : new()
         {
             return Indexer.Query<T>(where);
         }

@@ -12,7 +12,7 @@ namespace PieDb
             var hadToCreate = false;
             return PieDocument(obj, id, out hadToCreate);
         } 
-        public static PieDocument PieDocument(this object obj, string id, out bool hadToCreate)
+        public static PieDocument PieDocument<T>(this T obj, string id, out bool hadToCreate)
         {
             hadToCreate = false;
             bool createdDoc = false;

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using NUnit.Framework;
 
 namespace PieDb.Tests
@@ -15,7 +16,7 @@ namespace PieDb.Tests
             db.Advanced.Clear();
         }
 
-        [Test][ExpectedException(typeof(NotImplementedException))]
+        [Test]
         public void CanSearch()
         {
             var user = new User() {Name = "Harry"};

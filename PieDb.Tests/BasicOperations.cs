@@ -14,6 +14,11 @@ namespace PieDb.Tests
             db = new PieDb();
             db.Advanced.Clear();
         }
+        [TearDown]
+        public void TearDown()
+        {
+            db.Dispose();
+        }
 
         [Test]
         public void CanSaveAndLoadData()

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Lucene.Net.Linq.Mapping;
 
 namespace PieDb.Tests
 {
@@ -9,7 +10,9 @@ namespace PieDb.Tests
             Tasks = new List<Task>();
         }
 
+        
         public string Title { get; set; }
+        [IgnoreField]
         public IList<Task> Tasks { get; set; } 
     }
 }
