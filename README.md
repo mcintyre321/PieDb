@@ -3,7 +3,14 @@ PieDb
 
 The minimalist embedded .net NOSQL database that is as easy-as-pie. 
 
-For when you just want to get started QUICKLY with NO FUSS.
+It's a bit like RavenDb, but with far fewer features, aside from:
+
+1. It's completely transparent - you don't even need Id properties on your objects*.
+2. It's completely licence free!
+3. It has a very tiny codebase.
+
+*this is due to cunning use of the awesome [ConditionalWeakTable](http://msdn.microsoft.com/en-us/library/dd287757.aspx) class. Know it, use it!
+
 
 > Install-Package PieDb
 
