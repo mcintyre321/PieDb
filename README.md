@@ -32,7 +32,7 @@ It's a bit like RavenDb, but with far fewer features, aside from:
       //removing an object by id
       db.Remove(someId)
 
-      //querying (COMING SOON)
+      //LINQ querying (see Lucene.Net.Linq (https://github.com/themotleyfool/Lucene.Net.Linq)) for info
       var results = db.Query<T>(t => t.X == "asd").ToArray();
       
 
