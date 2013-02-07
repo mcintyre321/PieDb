@@ -57,9 +57,16 @@ namespace PieDb.Search
                 .MakeGenericMethod(document.Data.GetType());
             generic.Invoke(this, new[] { document });
         }
-        private void UpdateDocumentInIndex<T>(PieDocument document)
+        private void UpdateDocumentInIndex<T>(PieDocument document) where T : new()
         {
-
+            using (var session = _provider.OpenSession<T>(new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
+            {
+                session.Delete((T) document.Data);
+            }
+            using (var session = _provider.OpenSession<T>(new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
+            {
+                session.Add((T)document.Data);
+            }
         }
 
         private void RemoveDocumentFromIndex(PieDocument document)
@@ -90,13 +97,21 @@ namespace PieDb.Search
         }
 
 
-        public IEnumerable<T> Query<T>(Expression<Func<T, bool>> @where) where T : new()
+        public IEnumerable<T> Query<T>(Expression<Func<T, bool>> @where = null) where T : new()
         {
-            var indexQ = _provider.AsQueryable<T>(new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this));
-            if (@where != null) indexQ = indexQ.Where(where);
-            return indexQ.
-                Select(item => GetValue(item))
-                .Select(id => _pieDb.Get<T>(id));
+            using (var s = _provider.OpenSession<T>(new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this)))
+            {
+                var indexQ = s.Query();
+                if (@where != null) indexQ = indexQ.Where(where);
+                return indexQ.
+                    Select(item => GetValue(item))
+                    .Select(id => _pieDb.Get<T>(id));
+            }
+            //var indexQ = _provider.AsQueryable<T>(new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this));
+            //if (@where != null) indexQ = indexQ.Where(where);
+            //return indexQ.
+            //    Select(item => GetValue(item))
+            //    .Select(id => _pieDb.Get<T>(id));
         }
 
         private string GetValue<T>(T item) where T : new()

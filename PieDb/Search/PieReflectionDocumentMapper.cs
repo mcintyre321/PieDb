@@ -1,9 +1,7 @@
 using System.Runtime.CompilerServices;
 using Lucene.Net.Analysis;
 using Lucene.Net.Documents;
-using Lucene.Net.Index;
 using Lucene.Net.Linq.Mapping;
-using Lucene.Net.Search;
 using Lucene.Net.Util;
 
 namespace PieDb.Search
@@ -26,7 +24,7 @@ namespace PieDb.Search
         public override void ToDocument(T source, global::Lucene.Net.Documents.Document target)
         {
             base.ToDocument(source, target);
-            target.Add(new Field("__pieId", source.PieId(), Field.Store.YES, Field.Index.NO));
+            target.Add(new Field("__pieId", source.PieId(), Field.Store.YES, Field.Index.NOT_ANALYZED));
 
         }
         public override IDocumentKey ToKey(T source)
@@ -40,33 +38,5 @@ namespace PieDb.Search
             this._indexer.KeyTable.GetValue(target, key => id);
             base.ToObject(source, context, target);
         }
-    }
-
-    internal class PieDocumentKey : IDocumentKey
-    {
-        private readonly string _pieId;
-
-        public PieDocumentKey(string pieId)
-        {
-            _pieId = pieId;
-        }
-
-        public bool Equals(IDocumentKey other)
-        {
-            var otherPie = other as PieDocumentKey;
-            if (otherPie != null)
-            {
-                return otherPie._pieId == this._pieId;
-            }
-            return false;
-        }
-
-
-        public Query ToQuery()
-        {
-            return new TermQuery(new Term("__PieId", this._pieId));
-        }
-
-        public bool Empty { get; private set; }
     }
 }

@@ -68,6 +68,7 @@
     <Compile Include="PieDb.cs" />
     <Compile Include="PieDocument.cs" />
     <Compile Include="PieIdExtension.cs" />
+    <Compile Include="Search\PieDocumentKey.cs" />
     <Compile Include="Search\PieReflectionDocumentMapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SerializerSettings.cs" />
