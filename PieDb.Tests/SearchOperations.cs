@@ -31,6 +31,15 @@ namespace PieDb.Tests
             Assert.AreEqual("Harry", user2.Name);
             Assert.AreEqual(user.PieId(), user2.PieId(), "If these are different, user2 has not been loaded from the database (it has just been rebuilt by the lucene search)");
         }
+        [Test]
+        public void AnObjectSavedTwiceIsFoundOnce()
+        {
+            var user = new User() { Name = "Harry" };
+            db.Store(user);
+            db.Store(user);
+            var user2 = db.Query<User>(u => u.Name == "Harry").Single();
+        }
+
 
         [Test]
         public void CanSearchOnUpdatedData()
@@ -40,7 +49,7 @@ namespace PieDb.Tests
 
             var user2 = db.Query<User>(u => u.Name == "Harry").Single();
             user2.Name = "Tom";
-            db.Store(user);
+            db.Store(user2);
 
             var enumerable = db.Query<User>(u => u.Name == "Harry").ToArray();
             Assert.Null(enumerable.SingleOrDefault());
@@ -54,6 +63,8 @@ namespace PieDb.Tests
         {
             var user = new User() { Name = "Harry" };
             db.Store(user);
+            Assert.True(db.Query<User>(u => u.Name == "Harry").Any());
+            
             db.Remove(user);
 
             var enumerable = db.Query<User>(u => u.Name == "Harry").ToArray();

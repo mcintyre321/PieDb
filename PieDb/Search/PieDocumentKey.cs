@@ -26,7 +26,7 @@ namespace PieDb.Search
 
         public Query ToQuery()
         {
-            return new TermQuery(new Term("__PieId", this._pieId));
+            return new TermQuery(new Term("__pieId", this._pieId));
         }
 
         public bool Empty { get { return false; } }

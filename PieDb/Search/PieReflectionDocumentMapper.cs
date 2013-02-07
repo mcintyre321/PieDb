@@ -9,8 +9,6 @@ namespace PieDb.Search
     internal class PieReflectionDocumentMapper<T> : ReflectionDocumentMapper<T>
     {
         private readonly Indexer _indexer;
-        ConditionalWeakTable<object, string> KeyTable = new ConditionalWeakTable<object, string>();
-
         public PieReflectionDocumentMapper(Version version, Indexer indexer) : base(version)
         {
             _indexer = indexer;
@@ -29,7 +27,7 @@ namespace PieDb.Search
         }
         public override IDocumentKey ToKey(T source)
         {
-            return new PieDocumentKey(source.PieId());
+            return new PieDocumentKey(_indexer.KeyTable.GetValue(source, key => source.PieId()));
         }
 
         public override void ToObject(global::Lucene.Net.Documents.Document source, global::Lucene.Net.Linq.IQueryExecutionContext context, T target)
