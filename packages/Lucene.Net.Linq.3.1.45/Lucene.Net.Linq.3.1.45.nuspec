@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>Lucene.Net.Linq</id>
+    <version>3.1.45</version>
+    <title>Lucene.Net.Linq</title>
+    <authors>Chris Eldredge</authors>
+    <owners>Chris Eldredge</owners>
+    <licenseUrl>https://github.com/themotleyfool/Lucene.Net.Linq/blob/master/LICENSE.txt</licenseUrl>
+    <projectUrl>https://github.com/themotleyfool/Lucene.Net.Linq</projectUrl>
+    <iconUrl>https://svn.apache.org/repos/asf/incubator/lucene.net/trunk/branding/logo/lucene-net-icon-128x128.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Execute LINQ queries on Lucene.Net complete with object to Document mapping.</description>
+    <summary>Provides LINQ IQueryable interface and object/document mapping over a Lucene.Net index.</summary>
+    <releaseNotes>* Automatically creates Analyzer using metadata attributes like [Field(Analyzer=typeof(StandardAnalyzer)].
+      * Store different object types in single index.
+      * Prevent documents with null values on key properties from being stored.
+      * Enable sorting on types implementing IComparable&lt;T&gt; but not non-generic IComparable.
+      * Allow client to provide custom IDocumentMapper&lt;T&gt; implementations.</releaseNotes>
+    <copyright>Copyright 2012 The Motley Fool, LLC</copyright>
+    <tags>lucene.net lucene linq odata search nosql</tags>
+    <dependencies>
+      <dependency id="Remotion.Linq" version="[1.13.183, 2.0)" />
+      <dependency id="Common.Logging" version="[2.1.2, 3.0)" />
+      <dependency id="Lucene.Net" version="[3.0.3, 3.6)" />
+    </dependencies>
+    <references>
+      <reference file="Lucene.Net.Linq.dll" />
+    </references>
+  </metadata>
+</package>
