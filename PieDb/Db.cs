@@ -127,8 +127,6 @@ namespace PieDb
             public void Clear()
             {
                 _db.Clearing(this, EventArgs.Empty);
-                _db.Dispose();
-                _db.Indexer = new Indexer(_db);
                 Directory.Delete(_db.Location, true);
                 Directory.CreateDirectory(_db.Location);
                 _db.Cleared(this, EventArgs.Empty);
