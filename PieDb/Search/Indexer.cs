@@ -13,21 +13,21 @@ namespace PieDb.Search
 {
     public class Indexer
     {
-        private readonly PieDb _pieDb;
+        private readonly Db _db;
         private LuceneDataProvider _provider;
         private DirectoryInfo directoryInfo;
         public string Location { get; set; }
         internal ConditionalWeakTable<object, string> KeyTable = new ConditionalWeakTable<object, string>();
-        public Indexer(PieDb pieDb)
+        public Indexer(Db db)
         {
-            _pieDb = pieDb;
-            _pieDb.DocumentAdded += AddDocumentToIndex;
-            _pieDb.DocumentRemoved += RemoveDocumentFromIndex;
-            _pieDb.DocumentUpdated += UpdateDocumentInIndex;
-            _pieDb.Clearing += DeleteIndexFilesAndClearIndex;
-            _pieDb.Cleared += Reinitialise;
+            _db = db;
+            _db.DocumentAdded += AddDocumentToIndex;
+            _db.DocumentRemoved += RemoveDocumentFromIndex;
+            _db.DocumentUpdated += UpdateDocumentInIndex;
+            _db.Clearing += DeleteIndexFilesAndClearIndex;
+            _db.Cleared += Reinitialise;
 
-            Location = Path.Combine(_pieDb.Location, "Indexes");
+            Location = Path.Combine(_db.Location, "Indexes");
             directoryInfo = new DirectoryInfo(Location);
             directoryInfo.Create();
             //_provider = new LuceneDataProvider(new MMapDirectory(directoryInfo), Version.LUCENE_30);
@@ -105,7 +105,7 @@ namespace PieDb.Search
                 if (@where != null) indexQ = indexQ.Where(where);
                 return indexQ.
                     Select(item => GetValue(item))
-                    .Select(id => _pieDb.Get<T>(id));
+                    .Select(id => _db.Get<T>(id));
             }
             //var indexQ = _provider.AsQueryable<T>(new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this));
             //if (@where != null) indexQ = indexQ.Where(where);

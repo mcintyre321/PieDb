@@ -14,7 +14,7 @@ It's a bit like RavenDb, but with far fewer features, aside from:
 
 > Install-Package PieDb
 
-      var db = new PieDb();
+      var db = new PieDb.Db();
       var someObject = ...; //your object
       
       //storing an object with a random id

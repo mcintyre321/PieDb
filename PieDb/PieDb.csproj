@@ -65,7 +65,7 @@
   <ItemGroup>
     <Compile Include="Helpers.cs" />
     <Compile Include="Search\Indexer.cs" />
-    <Compile Include="PieDb.cs" />
+    <Compile Include="Db.cs" />
     <Compile Include="PieDocument.cs" />
     <Compile Include="PieIdExtension.cs" />
     <Compile Include="Search\PieDocumentKey.cs" />

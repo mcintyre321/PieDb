@@ -7,12 +7,12 @@ namespace PieDb.Tests
 {
     public class SearchOperations
     {
-        private PieDb db;
+        private Db db;
 
         [SetUp]
         public void SetUp()
         {
-            db = new PieDb();
+            db = new Db();
             db.Advanced.Clear();
         }
 

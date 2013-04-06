@@ -9,7 +9,7 @@ using Directory = System.IO.Directory;
 
 namespace PieDb
 {
-    public class PieDb : IDisposable
+    public class Db : IDisposable
     {
         public delegate void DbEvent(PieDocument document);
 
@@ -23,7 +23,7 @@ namespace PieDb
         public SerializerSettings SerializerSettings { get; set; }
         public AdvancedOptions Advanced { get; private set; }
         public Indexer Indexer { get; set; }
-        public PieDb()
+        public Db()
         {
             Location = Path.Combine(Helpers.GetAppDataPath(), "PieDb");
             Directory.CreateDirectory(Location);
@@ -117,19 +117,21 @@ namespace PieDb
 
         public class AdvancedOptions
         {
-            private readonly PieDb _pieDb;
+            private readonly Db _db;
 
-            public AdvancedOptions(PieDb pieDb)
+            public AdvancedOptions(Db db)
             {
-                _pieDb = pieDb;
+                _db = db;
             }
 
             public void Clear()
             {
-                _pieDb.Clearing(this, EventArgs.Empty);
-                Directory.Delete(_pieDb.Location, true);
-                Directory.CreateDirectory(_pieDb.Location);
-                _pieDb.Cleared(this, EventArgs.Empty);
+                _db.Clearing(this, EventArgs.Empty);
+                _db.Dispose();
+                _db.Indexer = new Indexer(_db);
+                Directory.Delete(_db.Location, true);
+                Directory.CreateDirectory(_db.Location);
+                _db.Cleared(this, EventArgs.Empty);
             }
         }
 
