@@ -33,7 +33,7 @@ namespace PieDb
             Indexer = new Indexer(this);
         }
 
-        public void Store<T>(T obj, string id = null) where T : new()
+        public void Store<T>(T obj, string id = null)
         {
             var doc = obj.PieDocument(id);
             doc.Deleted = false;
@@ -133,7 +133,7 @@ namespace PieDb
             }
         }
 
-        public IEnumerable<T> Query<T>(Expression<Func<T, bool>> where = null) where T : new()
+        public IEnumerable<T> Query<T>(Expression<Func<T, bool>> where = null)
         {
             return Indexer.Query<T>(where);
         }
@@ -144,7 +144,19 @@ namespace PieDb
         }
 
     }
-
+    public static class DbExtensions
+    {
+        public static T GetOrCreate<T>(this Db db, Func<T> create, string id = null) where T : class, new()
+        {
+            var t = db.TryGet<T>(id);
+            if (t == null)
+            {
+                t = create();
+                db.Store(t, id);
+            }
+            return t;
+        }
+    }
 
     public class ConcurrencyException : Exception
     {

@@ -18,6 +18,11 @@ namespace PieDb.Search
         private DirectoryInfo directoryInfo;
         public string Location { get; set; }
         internal ConditionalWeakTable<object, string> KeyTable = new ConditionalWeakTable<object, string>();
+        private Func<Type, object> Factory { get; set; }
+        private Func<T> TypedFactory<T>()
+        {
+            return () => (T) Factory(typeof (T));
+        } 
         public Indexer(Db db)
         {
             _db = db;
@@ -32,6 +37,7 @@ namespace PieDb.Search
             directoryInfo.Create();
             //_provider = new LuceneDataProvider(new MMapDirectory(directoryInfo), Version.LUCENE_30);
             _provider = new LuceneDataProvider(new RAMDirectory(), Version.LUCENE_30);
+            Factory = Activator.CreateInstance;
         }
 
         private void AddDocumentToIndex(PieDocument document)
@@ -41,9 +47,9 @@ namespace PieDb.Search
                 .MakeGenericMethod(document.Data.GetType());
             generic.Invoke(this, new[]{document});
         }
-        private void AddDocumentToIndex<T>(PieDocument document) where T : new()
+        private void AddDocumentToIndex<T>(PieDocument document)
         {
-            using (var session = _provider.OpenSession<T>(new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this)))
+            using (var session = _provider.OpenSession<T>(TypedFactory<T>(), new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this)))
             {
                 session.Add((T)document.Data);
             }
@@ -57,13 +63,13 @@ namespace PieDb.Search
                 .MakeGenericMethod(document.Data.GetType());
             generic.Invoke(this, new[] { document });
         }
-        private void UpdateDocumentInIndex<T>(PieDocument document) where T : new()
+        private void UpdateDocumentInIndex<T>(PieDocument document)  
         {
-            using (var session = _provider.OpenSession<T>(new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
+            using (var session = _provider.OpenSession<T>(TypedFactory<T>(), new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
             {
                 session.Delete((T) document.Data);
             }
-            using (var session = _provider.OpenSession<T>(new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
+            using (var session = _provider.OpenSession(TypedFactory<T>(), new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
             {
                 session.Add((T)document.Data);
             }
@@ -76,9 +82,9 @@ namespace PieDb.Search
                 .MakeGenericMethod(document.Data.GetType());
             generic.Invoke(this, new[] { document });
         }
-        private void RemoveDocumentFromIndex<T>(PieDocument document) where T : new()
+        private void RemoveDocumentFromIndex<T>(PieDocument document)
         {
-            using (var session = _provider.OpenSession<T>(new PieReflectionDocumentMapper<T>((Version) Version.LUCENE_30, this)))
+            using (var session = _provider.OpenSession<T>(TypedFactory<T>(), new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
             {
                 session.Delete((T)document.Data);
             }
@@ -97,9 +103,9 @@ namespace PieDb.Search
         }
 
 
-        public IEnumerable<T> Query<T>(Expression<Func<T, bool>> @where = null) where T : new()
+        public IEnumerable<T> Query<T>(Expression<Func<T, bool>> @where = null)
         {
-            using (var s = _provider.OpenSession<T>(new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this)))
+            using (var s = _provider.OpenSession<T>(TypedFactory<T>(), new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this)))
             {
                 var indexQ = s.Query();
                 if (@where != null) indexQ = indexQ.Where(where);
@@ -114,7 +120,7 @@ namespace PieDb.Search
             //    .Select(id => _pieDb.Get<T>(id));
         }
 
-        private string GetValue<T>(T item) where T : new()
+        private string GetValue<T>(T item)
         {
             return this.KeyTable.GetValue(item, c=> "asd" );
         }
