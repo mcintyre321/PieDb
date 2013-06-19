@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -26,13 +27,27 @@ namespace PieDb.Search
         public Indexer(Db db)
         {
             _db = db;
-            _db.DocumentAdded += AddDocumentToIndex;
-            _db.DocumentRemoved += RemoveDocumentFromIndex;
-            _db.DocumentUpdated += UpdateDocumentInIndex;
-            _db.Clearing += DeleteIndexFilesAndClearIndex;
-            _db.Cleared += Reinitialise;
+            _db.CollectionChanged += (sender, args) =>
+            {
+                switch (args.Action)
+                {
+                    case NotifyCollectionChangedAction.Add:
+                        AddDocumentToIndex(args.NewItems.Cast<PieDocument>().Single());
+                        break;
+                    case NotifyCollectionChangedAction.Remove:
+                        RemoveDocumentFromIndex(args.OldItems.Cast<PieDocument>().Single());
+                        break;
+                    case NotifyCollectionChangedAction.Reset:
+                        DeleteIndexFilesAndClearIndex(this, args);
+                        Reinitialise(this, args);
+                        break;
+                    default:
+                        throw new NotImplementedException(args.ToString() + " not expected");
 
-            Location = Path.Combine(_db.Location, "Indexes");
+                }
+            };
+
+            Location = Path.Combine(_db.DbLocation, "Indexes");
             directoryInfo = new DirectoryInfo(Location);
             directoryInfo.Create();
             //_provider = new LuceneDataProvider(new MMapDirectory(directoryInfo), Version.LUCENE_30);

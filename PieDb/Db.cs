@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,24 +10,22 @@ using Directory = System.IO.Directory;
 
 namespace PieDb
 {
-    public class Db : IDisposable
+    public class Db : IDisposable, INotifyCollectionChanged
     {
+        private string DocumentLocation;
+
         public delegate void DbEvent(PieDocument document);
 
-        public event DbEvent DocumentAdded = (o) => { };
-        public event DbEvent DocumentUpdated = (o) => { };
-        public event DbEvent DocumentRemoved = (o) => { };
-        public event EventHandler Clearing = (sender, args) => { };
-        public event EventHandler Cleared = (sender, args) => { };
-
-        public string Location { get; private set; }
+        public string DbLocation { get; private set; }
         public SerializerSettings SerializerSettings { get; set; }
         public AdvancedOptions Advanced { get; private set; }
         public Indexer Indexer { get; set; }
         public Db()
         {
-            Location = Path.Combine(Helpers.GetAppDataPath(), "PieDb");
-            Directory.CreateDirectory(Location);
+            DbLocation = Path.Combine(Helpers.GetAppDataPath(), "PieDb");
+            Directory.CreateDirectory(DbLocation);
+            DocumentLocation =  Path.Combine(DbLocation, "documents");
+            Directory.CreateDirectory(DocumentLocation);
             SerializerSettings = new SerializerSettings();
             Advanced = new AdvancedOptions(this);
 
@@ -58,9 +57,11 @@ namespace PieDb
                 wasNew = true;
             }
             var json = JsonConvert.SerializeObject(doc, Formatting.Indented, SerializerSettings);
-            File.WriteAllText(Path.Combine(Location, doc.Id + ".json"), json);
-            if (wasNew) DocumentAdded(doc);
-            else DocumentUpdated(doc);
+            File.WriteAllText(Path.Combine(DocumentLocation, doc.Id + ".json"), json);
+            if (!wasNew)
+                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, doc)); ;
+            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, doc));
+            
         }
 
         public void Remove<T>(T obj)
@@ -72,8 +73,7 @@ namespace PieDb
             var doc = GetPieDocument(id);
             doc.Deleted = true;
             SaveDocument(doc);
-            DocumentRemoved(doc);
-
+            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, doc)); ;
         }
 
         public object Get(string pieId)
@@ -109,7 +109,7 @@ namespace PieDb
 
         private PieDocument GetPieDocument(string pieId)
         {
-            var json = File.ReadAllText(Path.Combine(Location, pieId + ".json"));
+            var json = File.ReadAllText(Path.Combine(DocumentLocation, pieId + ".json"));
             var doc = JsonConvert.DeserializeObject<PieDocument>(json, SerializerSettings);
             doc.SetDataPieDocument();
             return doc;
@@ -126,10 +126,11 @@ namespace PieDb
 
             public void Clear()
             {
-                _db.Clearing(this, EventArgs.Empty);
-                Directory.Delete(_db.Location, true);
-                Directory.CreateDirectory(_db.Location);
-                _db.Cleared(this, EventArgs.Empty);
+                foreach (var file in Directory.GetFiles(_db.DocumentLocation))
+                {
+                    File.Delete(file);
+                }
+                _db.CollectionChanged(_db, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             }
         }
 
@@ -143,6 +144,7 @@ namespace PieDb
             Indexer.Dispose();
         }
 
+        public event NotifyCollectionChangedEventHandler CollectionChanged = (sender, args) => { };
     }
     public static class DbExtensions
     {
