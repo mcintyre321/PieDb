@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using Newtonsoft.Json;
 using PieDb.Search;
 using Directory = System.IO.Directory;
@@ -17,20 +19,29 @@ namespace PieDb
         public delegate void DbEvent(PieDocument document);
 
         public string DbLocation { get; private set; }
-        public SerializerSettings SerializerSettings { get; set; }
+        private SerializerSettings SerializerSettings { get; set; }
         public AdvancedOptions Advanced { get; private set; }
-        public Indexer Indexer { get; set; }
-        public Db()
-        {
-            DbLocation = Path.Combine(Helpers.GetAppDataPath(), "PieDb");
-            Directory.CreateDirectory(DbLocation);
-            DocumentLocation =  Path.Combine(DbLocation, "documents");
-            Directory.CreateDirectory(DocumentLocation);
-            SerializerSettings = new SerializerSettings();
-            Advanced = new AdvancedOptions(this);
 
-            Indexer = new Indexer(this);
+        public Db(SerializerSettings serializerSettings = null, string dbLocation = null)
+        {
+            serializerSettings = serializerSettings ?? new SerializerSettings();
+            dbLocation = dbLocation ?? Path.Combine(Helpers.GetAppDataPath(), "PieDb");
+        
+            DbLocation = dbLocation;
+            Directory.CreateDirectory(DbLocation);
+            DocumentLocation = Path.Combine(DbLocation, "documents");
+            Directory.CreateDirectory(DocumentLocation);
+            Advanced = new AdvancedOptions(this);
+            SerializerSettings = serializerSettings;
         }
+
+        internal IEnumerable<PieDocument> GetDocuments()
+        {
+            return Directory.EnumerateFiles(DocumentLocation, "*.json")
+                            .Select(
+                                documentPath => this.GetPieDocument(Path.GetFileNameWithoutExtension(documentPath)));
+        }
+
 
         public void Store<T>(T obj, string id = null)
         {
@@ -41,6 +52,7 @@ namespace PieDb
 
         private void SaveDocument(PieDocument doc)
         {
+
             bool wasNew = false;
             try
             {
@@ -59,21 +71,25 @@ namespace PieDb
             var json = JsonConvert.SerializeObject(doc, Formatting.Indented, SerializerSettings);
             File.WriteAllText(Path.Combine(DocumentLocation, doc.Id + ".json"), json);
             if (!wasNew)
-                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, doc)); ;
+                CollectionChanged(this,
+                                  new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, doc));
+            ;
             CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, doc));
-            
+
         }
+
 
         public void Remove<T>(T obj)
         {
             Remove(obj.PieId());
         }
+
         public void Remove(string id)
         {
             var doc = GetPieDocument(id);
             doc.Deleted = true;
             SaveDocument(doc);
-            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, doc)); ;
+            CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, doc));
         }
 
         public object Get(string pieId)
@@ -86,7 +102,7 @@ namespace PieDb
             }
             catch (FileNotFoundException ex)
             {
-                throw new DocumentNotFoundException(pieId, ex) { };
+                throw new DocumentNotFoundException(pieId, ex) {};
             }
         }
 
@@ -134,35 +150,13 @@ namespace PieDb
             }
         }
 
-        public IEnumerable<T> Query<T>(Expression<Func<T, bool>> where = null)
-        {
-            return Indexer.Query<T>(where);
-        }
-
+        public event NotifyCollectionChangedEventHandler CollectionChanged = (sender, args) => { };
         public void Dispose()
         {
-            Indexer.Dispose();
+            OnDispose();
         }
 
-        public event NotifyCollectionChangedEventHandler CollectionChanged = (sender, args) => { };
-    }
-    public static class DbExtensions
-    {
-        public static T GetOrCreate<T>(this Db db, Func<T> create, string id = null) where T : class
-        {
-            id = id ?? typeof (T).Name;
-            var t = db.TryGet<T>(id);
-            if (t == null)
-            {
-                t = create();
-                db.Store(t, id);
-            }
-            return t;
-        }
-        public static T GetOrCreate<T>(this Db db, string id = null) where T : class, new()
-        {
-            return GetOrCreate(db, () => new T(), id);
-        }
+        public event Action OnDispose = () => { };
     }
 
     public class ConcurrencyException : Exception

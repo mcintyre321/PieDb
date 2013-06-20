@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using NUnit.Framework;
+using PieDb.Search;
 
 namespace PieDb.Tests
 {

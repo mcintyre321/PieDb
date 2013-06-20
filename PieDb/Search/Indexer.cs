@@ -22,11 +22,28 @@ namespace PieDb.Search
         private Func<Type, object> Factory { get; set; }
         private Func<T> TypedFactory<T>()
         {
-            return () => (T) Factory(typeof (T));
-        } 
+            return () => (T)Factory(typeof(T));
+        }
+
         public Indexer(Db db)
         {
             _db = db;
+            Location = Path.Combine(_db.DbLocation, "Indexes");
+            directoryInfo = new DirectoryInfo(Location);
+            directoryInfo.Create();
+
+            _provider = new LuceneDataProvider(new RAMDirectory(), Version.LUCENE_30);
+
+            _db.OnDispose += this.Dispose;
+            Factory = Activator.CreateInstance;
+
+
+
+            foreach (var pieDocument in db.GetDocuments())
+            {
+                AddDocumentToIndex(pieDocument);
+            }
+
             _db.CollectionChanged += (sender, args) =>
             {
                 switch (args.Action)
@@ -43,24 +60,16 @@ namespace PieDb.Search
                         break;
                     default:
                         throw new NotImplementedException(args.ToString() + " not expected");
-
                 }
             };
-
-            Location = Path.Combine(_db.DbLocation, "Indexes");
-            directoryInfo = new DirectoryInfo(Location);
-            directoryInfo.Create();
-            //_provider = new LuceneDataProvider(new MMapDirectory(directoryInfo), Version.LUCENE_30);
-            _provider = new LuceneDataProvider(new RAMDirectory(), Version.LUCENE_30);
-            Factory = Activator.CreateInstance;
         }
 
         private void AddDocumentToIndex(PieDocument document)
         {
-            var generic = this.GetType().GetMethods(BindingFlags.Instance| BindingFlags.NonPublic)
+            var generic = this.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
                 .Single(m => m.Name == "AddDocumentToIndex" && m.IsGenericMethodDefinition)
                 .MakeGenericMethod(document.Data.GetType());
-            generic.Invoke(this, new[]{document});
+            generic.Invoke(this, new[] { document });
         }
         private void AddDocumentToIndex<T>(PieDocument document)
         {
@@ -78,11 +87,11 @@ namespace PieDb.Search
                 .MakeGenericMethod(document.Data.GetType());
             generic.Invoke(this, new[] { document });
         }
-        private void UpdateDocumentInIndex<T>(PieDocument document)  
+        private void UpdateDocumentInIndex<T>(PieDocument document)
         {
             using (var session = _provider.OpenSession<T>(TypedFactory<T>(), new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
             {
-                session.Delete((T) document.Data);
+                session.Delete((T)document.Data);
             }
             using (var session = _provider.OpenSession(TypedFactory<T>(), new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
             {
@@ -137,7 +146,7 @@ namespace PieDb.Search
 
         private string GetValue<T>(T item)
         {
-            return this.KeyTable.GetValue(item, c=> "asd" );
+            return this.KeyTable.GetValue(item, c => "asd");
         }
 
         public void Dispose()
