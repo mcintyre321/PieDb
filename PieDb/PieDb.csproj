@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DbExtensions.cs" />
+    <Compile Include="DbSession.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Search\Indexer.cs" />
     <Compile Include="Db.cs" />
