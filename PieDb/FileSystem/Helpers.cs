@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace PieDb
+namespace PieDb.FileSystem
 {
     internal static class Helpers
     {

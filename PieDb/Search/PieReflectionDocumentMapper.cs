@@ -27,13 +27,13 @@ namespace PieDb.Search
         }
         public override IDocumentKey ToKey(T source)
         {
-            return new PieDocumentKey(_indexer.KeyTable.GetValue(source, key => source.PieId()));
+            return new PieDocumentKey(source.PieId());
         }
 
         public override void ToObject(global::Lucene.Net.Documents.Document source, global::Lucene.Net.Linq.IQueryExecutionContext context, T target)
         {
             var id = source.GetField("__pieId").StringValue;
-            this._indexer.KeyTable.GetValue(target, key => id);
+            target.PieId(id);
             base.ToObject(source, context, target);
         }
     }

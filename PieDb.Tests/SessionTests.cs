@@ -1,44 +1,48 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
+using GenericTransactionLog;
 using NUnit.Framework;
 
 namespace PieDb.Tests
 {
     public class SessionTests
     {
-        private Db db;
+        private PieDatabase pieDatabase;
 
         [SetUp]
         public void SetUp()
         {
-            db = new Db();
-            db.Advanced.Clear();
+            var store = new FileTransactionStore(Path.GetRandomFileName());
+            pieDatabase = new PieDatabase(store);
+            var session = pieDatabase.OpenSession();
             var task = new Task()
             {
                 Description = "milk",
             };
 
-            db.Store(task, "task");
+            session.Store(task, "task");
+            session.Commit();
         }
         [TearDown]
         public void TearDown()
         {
-            db.Advanced.Clear();
-            db.Dispose();
         }
 
         [Test]
         public void WillNotDirtyRead()
         {
-            var session = new DbSession(db);
+            var session = pieDatabase.OpenSession();
             var task = session.Get<Task>("task");
             Assert.AreEqual("milk", task.Description);
 
             {
-                var taskLoadedDirectly = db.Get<Task>("task");
-                taskLoadedDirectly.Description = "glue";
-                db.Store<Task>(taskLoadedDirectly, "task");
+                var otherSession = pieDatabase.OpenSession();
+                var taskLoadedInOtherSession = otherSession.Get<Task>("task");
+                taskLoadedInOtherSession.Description = "glue";
+                otherSession.Store<Task>(taskLoadedInOtherSession, "task");
+                otherSession.Commit();
             }
 
             task = session.Get<Task>("task");
@@ -48,88 +52,69 @@ namespace PieDb.Tests
         [Test]
         public void WillNotNonRepeatableRead()
         {
-            var session = new DbSession(db);
-            var task = session.Get<Task>("task");
+            var firstSession = pieDatabase.OpenSession();
+            var task = firstSession.Get<Task>("task");
             Assert.AreEqual("milk", task.Description);
 
             {
-                db.Remove("task");
+                var otherSession = pieDatabase.OpenSession();
+                otherSession.Remove("task");
+                otherSession.Commit();
             }
 
-            task = session.Get<Task>("task");
+            task = firstSession.Get<Task>("task");
             Assert.AreEqual("milk", task.Description);
-        }
-        [Test]
-        public void WillNotPhantomRead()
-        {
-            var session = new DbSession(db);
-            var exceptionThrown = false;
-            try
-            {
-                var task = session.Get<Task>("notask");
-            }
-            catch (Exception)
-            {
-                exceptionThrown = true;
-            }
-            Assert.True(exceptionThrown);
-            {
-                db.Store(new Task(), "notask");
-            }
 
-            try
-            {
-                var task = session.Get<Task>("notask");
-            }
-            catch (Exception)
-            {
-                exceptionThrown = true;
-            }
-            Assert.True(exceptionThrown);
+            task.Description = "setting desc on removed task";
+            Assert.Throws<ConcurrencyException>(firstSession.Commit);
         }
+        
 
         [Test]
         public void WillNotPhantomTryRead()
         {
-            var session = new DbSession(db);
-            var task = session.TryGet<Task>("notask");
-            Assert.Null(task);
+            var session = pieDatabase.OpenSession();
+            var task = session.Get<Task>("notask");
 
             {
-                db.Store(new Task(), "notask");
+                var otherSession = pieDatabase.OpenSession();
+                otherSession.Store(new Task(), "notask");
+                otherSession.Commit();
             }
 
-            task = session.TryGet<Task>("notask");
+            task = session.Get<Task>("notask");
             Assert.Null(task);
         }
 
         [Test]
         public void ChangesAreNotSavedUntilCommit()
         {
-            var session = new DbSession(db);
+            var session = pieDatabase.OpenSession();
             var task = session.Get<Task>("task");
             task.Description = "glue";
             session.Store(task);
 
-            Assert.AreEqual("milk", db.Get<Task>("task").Description);
+            Assert.AreEqual("milk", pieDatabase.OpenSession().Get<Task>("task").Description);
 
             session.Commit();
 
-            Assert.AreEqual("glue", db.Get<Task>("task").Description);
+            Assert.AreEqual("glue", pieDatabase.OpenSession().Get<Task>("task").Description);
         }
 
         [Test]
         public void DeletesAreNotSavedUntilCommit()
         {
-            var session = new DbSession(db);
+            var session = pieDatabase.OpenSession();
             session.Remove("task");
 
-            Assert.AreEqual("milk", db.Get<Task>("task").Description);
+            Assert.AreEqual("milk", pieDatabase.OpenSession().Get<Task>("task").Description);
 
             session.Commit();
+
+
             try
             {
-                var task = db.Get<Task>("task");
+                Assert.Null(pieDatabase.OpenSession().Get<Task>("task").Description);
                 Assert.Fail("Should not reach here as task is deleted");
             }
             catch (Exception)

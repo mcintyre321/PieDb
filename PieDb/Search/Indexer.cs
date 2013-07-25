@@ -14,45 +14,34 @@ namespace PieDb.Search
 {
     public class Indexer
     {
-        private readonly Db _db;
+        private readonly DataStore _dataStore;
         private LuceneDataProvider _provider;
-        private DirectoryInfo directoryInfo;
-        public string Location { get; set; }
-        internal ConditionalWeakTable<object, string> KeyTable = new ConditionalWeakTable<object, string>();
         private Func<Type, object> Factory { get; set; }
         private Func<T> TypedFactory<T>()
         {
             return () => (T)Factory(typeof(T));
         }
 
-        public Indexer(Db db)
+        public Indexer(DataStore dataStore)
         {
-            _db = db;
-            Location = Path.Combine(_db.DbLocation, "Indexes");
-            directoryInfo = new DirectoryInfo(Location);
-            directoryInfo.Create();
+            _dataStore = dataStore;
 
             _provider = new LuceneDataProvider(new RAMDirectory(), Version.LUCENE_30);
 
-            _db.OnDispose += this.Dispose;
+            _dataStore.OnDispose += this.Dispose;
             Factory = Activator.CreateInstance;
 
 
 
-            foreach (var pieDocument in db.GetDocuments())
-            {
-                AddDocumentToIndex(pieDocument);
-            }
-
-            _db.CollectionChanged += (sender, args) =>
+            dataStore.CollectionChanged += (sender, args) =>
             {
                 switch (args.Action)
                 {
                     case NotifyCollectionChangedAction.Add:
-                        AddDocumentToIndex(args.NewItems.Cast<PieDocument>().Single());
+                        AddDocumentToIndex(args.NewItems.Cast<object>().Single());
                         break;
                     case NotifyCollectionChangedAction.Remove:
-                        RemoveDocumentFromIndex(args.OldItems.Cast<PieDocument>().Single());
+                        RemoveDocumentFromIndex(args.OldItems.Cast<object>().Single());
                         break;
                     case NotifyCollectionChangedAction.Reset:
                         DeleteIndexFilesAndClearIndex(this, args);
@@ -64,70 +53,68 @@ namespace PieDb.Search
             };
         }
 
-        private void AddDocumentToIndex(PieDocument document)
+        private void AddDocumentToIndex(object document)
         {
             var generic = this.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
                 .Single(m => m.Name == "AddDocumentToIndex" && m.IsGenericMethodDefinition)
-                .MakeGenericMethod(document.Data.GetType());
+                .MakeGenericMethod(document.GetType());
             generic.Invoke(this, new[] { document });
         }
-        private void AddDocumentToIndex<T>(PieDocument document)
+        private void AddDocumentToIndex<T>(object document)
         {
             using (var session = _provider.OpenSession<T>(TypedFactory<T>(), new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this)))
             {
-                session.Add((T)document.Data);
+                session.Add((T)document);
             }
         }
 
 
-        private void UpdateDocumentInIndex(PieDocument document)
+        private void UpdateDocumentInIndex(object document)
         {
             var generic = this.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
                 .Single(m => m.Name == "UpdateDocumentInIndex" && m.IsGenericMethodDefinition)
-                .MakeGenericMethod(document.Data.GetType());
+                .MakeGenericMethod(document.GetType());
             generic.Invoke(this, new[] { document });
         }
-        private void UpdateDocumentInIndex<T>(PieDocument document)
+        private void UpdateDocumentInIndex<T>(object document)
         {
             using (var session = _provider.OpenSession<T>(TypedFactory<T>(), new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
             {
-                session.Delete((T)document.Data);
+                session.Delete((T)document);
             }
             using (var session = _provider.OpenSession(TypedFactory<T>(), new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
             {
-                session.Add((T)document.Data);
+                session.Add((T)document);
             }
         }
 
-        private void RemoveDocumentFromIndex(PieDocument document)
+        private void RemoveDocumentFromIndex(object document)
         {
             var generic = this.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
                 .Single(m => m.Name == "RemoveDocumentFromIndex" && m.IsGenericMethodDefinition)
-                .MakeGenericMethod(document.Data.GetType());
+                .MakeGenericMethod(document.GetType());
             generic.Invoke(this, new[] { document });
         }
-        private void RemoveDocumentFromIndex<T>(PieDocument document)
+        private void RemoveDocumentFromIndex<T>(object document)
         {
             using (var session = _provider.OpenSession<T>(TypedFactory<T>(), new PieReflectionDocumentMapper<T>((Version)Version.LUCENE_30, this)))
             {
-                session.Delete((T)document.Data);
+                session.Delete((T)document);
             }
         }
 
         void DeleteIndexFilesAndClearIndex(object sender, EventArgs e)
         {
             _provider.Dispose();
-            directoryInfo.Delete(true);
         }
 
         void Reinitialise(object sender, EventArgs e)
         {
-            directoryInfo.Create();
-            _provider = new LuceneDataProvider(new MMapDirectory(directoryInfo), Version.LUCENE_30);
+            _provider = new LuceneDataProvider(new RAMDirectory(), Version.LUCENE_30);
         }
 
 
-        public IEnumerable<T> Query<T>(Expression<Func<T, bool>> @where = null)
+        public IEnumerable<T> Query<T>(DbSession session, Expression<Func<T, bool>> @where = null)
         {
             using (var s = _provider.OpenSession<T>(TypedFactory<T>(), new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this)))
             {
@@ -135,18 +122,13 @@ namespace PieDb.Search
                 if (@where != null) indexQ = indexQ.Where(where);
                 return indexQ.
                     Select(item => GetValue(item))
-                    .Select(id => _db.Get<T>(id));
+                    .Select(id => session.Get<T>(id));
             }
-            //var indexQ = _provider.AsQueryable<T>(new PieReflectionDocumentMapper<T>(Version.LUCENE_30, this));
-            //if (@where != null) indexQ = indexQ.Where(where);
-            //return indexQ.
-            //    Select(item => GetValue(item))
-            //    .Select(id => _pieDb.Get<T>(id));
         }
 
         private string GetValue<T>(T item)
         {
-            return this.KeyTable.GetValue(item, c => "asd");
+            return item.PieId();
         }
 
         public void Dispose()

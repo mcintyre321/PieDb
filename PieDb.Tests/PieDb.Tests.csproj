@@ -37,6 +37,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Common.Logging.2.1.2\lib\net40\Common.Logging.dll</HintPath>
     </Reference>
+    <Reference Include="GenericTransactionLog">
+      <HintPath>..\..\GenericTransactionLog\GenericTransactionLog\bin\Debug\GenericTransactionLog.dll</HintPath>
+    </Reference>
     <Reference Include="ICSharpCode.SharpZipLib">
       <HintPath>..\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
@@ -69,7 +72,6 @@
   <ItemGroup>
     <Compile Include="BasicOperations.cs" />
     <Compile Include="Concurrency.cs" />
-    <Compile Include="DbSession.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Domain\Task.cs" />
     <Compile Include="Domain\TaskList.cs" />

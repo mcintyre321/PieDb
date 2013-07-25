@@ -1,68 +1,68 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Specialized;
+using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading;
+using GenericTransactionLog;
+using PieDb.Search;
+using Directory = System.IO.Directory;
 
 namespace PieDb
 {
-    public class DbSession
+    public class DbSession : IDisposable //, INotifyCollectionChanged
     {
-        Hashtable cache = new Hashtable();
-        HashSet<string> dirtyKeys = new HashSet<string>(); 
+        private readonly TransactionLog<DataStore> _log;
+        private SessionDataStore _sessionDataStore;
 
-        private readonly Db _db;
-        object deleteMarker = new object();
-        public DbSession(Db db)
+        public DbSession(TransactionLog<DataStore> log)
         {
-            _db = db;
+            _log = log;
+            _sessionDataStore = new SessionDataStore(() => _log.Value);
+
         }
 
-        public T Get<T>(string id)
+        public void Store<T>(T obj, string id = null)
         {
-            if (cache.ContainsKey(id))
-            {
-                return (T) cache[id] ;
-            }
-            cache[id] = _db.Get<T>(id);
-            return (T) cache[id];
+            _sessionDataStore.Store(obj, obj.PieId(id));
         }
 
-        public T TryGet<T>(string id) where T : class
+        public void Remove<T>(T obj)
         {
-            if (cache.ContainsKey(id))
-            {
-                return (T)cache[id];
-            }
-            cache[id] = _db.TryGet<T>(id);
-            return (T)cache[id];
-        }
-
-        public void Store<T>(T t, string id = null)
-        {
-            id = t.PieDocument(id).Id;
-            cache[id] = t;
-            
-            dirtyKeys.Add(id);
-        }
-
-        public void Commit()
-        {
-            foreach (var dirtyKey in dirtyKeys)
-            {
-                object o = cache[dirtyKey];
-                if (o == deleteMarker)
-                {
-                    _db.Remove(dirtyKey);
-                }
-                else
-                {
-                    _db.Store<object>(o, dirtyKey);
-                }
-            }
+            Remove(obj.PieId());
         }
 
         public void Remove(string id)
         {
-            cache[id] = deleteMarker;
-            dirtyKeys.Add(id);
+            _sessionDataStore.Remove(id);
+        }
+
+        public object Get(string pieId)
+        {
+            return _sessionDataStore.Get(pieId);
+        }
+
+        public T Get<T>(string pieId)
+        {
+            return (T) Get(pieId);
+        }
+
+        public void Dispose()
+        {
+
+        }
+
+
+        public void Commit()
+        {
+            var transaction = new DatabaseTransaction();
+            transaction.Actions.AddRange(_sessionDataStore.GetActions());
+            if (transaction.Actions.Any())
+            {
+                _log.LogAndApplyTransaction(transaction);
+            }
+            _sessionDataStore = new SessionDataStore(() => _log.Value);
         }
     }
 }
