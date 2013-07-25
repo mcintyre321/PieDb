@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("PieDb")]
-[assembly: AssemblyDescription("Easy-as-pie embedded object database. Saves objects to json in App_Data https://github.com/mcintyre321/PieDb MIT Licence")]
+[assembly: AssemblyDescription("Easy-as-pie NOSQL object database. Transactions and unit of work / session support. https://github.com/mcintyre321/PieDb MIT Licence")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Harry McIntyre")]
 [assembly: AssemblyProduct("PieDb")]
