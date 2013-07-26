@@ -7,7 +7,7 @@ The minimalist embedded .net NOSQL database that is as easy-as-pie to use.
 2. Transparent - you don't need Id properties on your objects*.
 2. It's MIT licenced
 3. It has a very tiny codebase.
-4. It uses a JSON transaction log to record changes (so your objects need to be Json serializable)
+4. It uses a JSON transaction log to record changes (so your objects need to be Json serializable). Can be written to disk, or work in-memory for testing
 5. Transactional sessions (aka Unit Of Work) with optimistic concurrency
 
 *this is due to cunning use of the awesome [ConditionalWeakTable](http://msdn.microsoft.com/en-us/library/dd287757.aspx) class. Know it, use it!
