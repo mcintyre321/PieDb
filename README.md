@@ -61,3 +61,7 @@ for an example using the Lucene.Net.Linq library, which allows querying as below
 
 Why "PieDb?" Many of my other projects are named after foods and it's short.
 
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mcintyre321/piedb/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
